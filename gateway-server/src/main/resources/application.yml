@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: gatway-server
+server:
+  port: 9003
+
+
+eureka:
+  instance:
+    prefer-ip-address: true #使用IP注册
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+zuul:
+  ignored-services: '*'
+  host:
+    connect-timeout-millis: 10000
+    socket-timeout-millis: 60000
+  strip-prefix: false
+
+  routes:
+    user-api:
+    #设置路由到后端的时候忽略掉跨域头信息
+      path: /api/**
+      service-id: user-api
+
+
+# 超时配置 起
+ribbon:
+  ReadTimeout: 10000
+  ConnectTimeout: 10000
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 2
+  eureka:
+    enabled: true
+
+hystrix:
+  command:
+    default:
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          thread:
+            timeoutInMilliseconds: 600000
+
+
+filter:
+  ignores: /sys/user/login

@@ -1,0 +1,46 @@
+server:
+  port: 9001
+eureka:
+  instance:
+      prefer-ip-address: true #使用IP注册
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+spring:
+  mvc:
+    throw-exception-if-no-handler-found: true
+
+  datasource:
+    name: dev
+    url: jdbc:mysql://localhost:3306/saas-cloud?allowMultiQueries=true&useUnicode=true&zeroDateTimeBehavior=convertToNull&characterEncoding=UTF-8
+    username: root
+    password: root
+  druid:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+    filters: stat
+    maxActive: 100
+    maxIdle: 50
+    initialSize: 1
+    maxWait: 60000
+    minIdle: 10
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: select 'x'
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    maxOpenPreparedStatements: 20
+  application:
+    name: user-api
+
+#logging
+logging:
+  file: ${logging.path}/${spring.application.name}.log
+  path: logs
+  level:
+   com.hth.cloud: DEBUG
+
+mybatis:
+  mapper-locations: classpath:mappers/*.xml

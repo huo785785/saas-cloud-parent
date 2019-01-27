@@ -1,0 +1,19 @@
+eureka:
+    client:
+        fetchRegistry: false
+        registerWithEureka: false
+        serviceUrl:
+            defaultZone: controller://localhost:9000/eureka/
+    instance:
+        preferIpAddress: true
+    server:
+        enable-self-preservation: false
+        eviction-interval-timer-in-ms: 1000
+logging:
+    file: ${logging.path}/${spring.application.name}.log
+    path: logs
+server:
+  port: 8761
+spring:
+  application:
+    name: eureka-server
