@@ -14,6 +14,8 @@ public class SysMenu implements Serializable {
 
     private String url;
 
+    private String method;
+
     private String pid;
 
     private Integer orderNum;
@@ -116,6 +118,14 @@ public class SysMenu implements Serializable {
         this.updateTime = updateTime;
     }
 
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -127,6 +137,7 @@ public class SysMenu implements Serializable {
         sb.append(", name=").append(name);
         sb.append(", perms=").append(perms);
         sb.append(", url=").append(url);
+        sb.append(", method=").append(method);
         sb.append(", pid=").append(pid);
         sb.append(", orderNum=").append(orderNum);
         sb.append(", type=").append(type);

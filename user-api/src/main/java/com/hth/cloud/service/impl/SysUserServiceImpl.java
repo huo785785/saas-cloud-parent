@@ -120,14 +120,8 @@ public class SysUserServiceImpl implements SysUserService{
         if(!PasswordUtils.matches(sysUser.getSalt(),dto.getPassword(),sysUser.getPassword())){
             throw new BusinessException(BaseResponseCode.PASSWORD_ERROR);
         }
-        List<SysMenu> menuByUserId = sysMenuService.getMenuByUserId(sysUser.getId());
-        List<String> permissions=new ArrayList<>(menuByUserId.size());
-        for (SysMenu menu:menuByUserId){
-            permissions.add(menu.getUrl());
-        }
         Claims claims = Jwts.claims().setSubject(sysUser.getId());
         claims.put(UserTokenConstant.LOGIN_JWT_CLAIMS_USERNAME, sysUser.getUsername());
-        claims.put("authorities",permissions);
         String token=JwtTokenUtils.generateToken(claims);
         LoginRespVO vo=new LoginRespVO();
         BeanUtils.copyProperties(sysUser,vo);

@@ -3,10 +3,13 @@ package com.hth.cloud.filter;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.hth.cloud.common.base.HgResult;
+import com.hth.cloud.common.exception.BusinessException;
 import com.hth.cloud.common.exception.code.BaseResponseCode;
 import com.hth.cloud.common.util.JwtTokenUtils;
 import com.hth.cloud.config.FilterConfig;
 import com.hth.cloud.constant.UserTokenConstant;
+import com.hth.cloud.fegin.user.IMenuFeignService;
+import com.hth.entity.user.SysMenu;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.exception.ZuulException;
@@ -37,6 +40,8 @@ import java.util.List;
 @Service
 public class AccessFilter extends ZuulFilter{
     @Autowired
+    private IMenuFeignService menuFeignService;
+    @Autowired
     private FilterConfig filterConfig;
     @Override
     public String filterType() {
@@ -61,7 +66,8 @@ public class AccessFilter extends ZuulFilter{
         ctx.getResponse().setContentType("text/html;charset=UTF-8");
         HttpServletRequest request = ctx.getRequest();
         String requestUrl = request.getRequestURL().toString();
-        log.info("requestUrl={}",requestUrl);
+        String method = request.getMethod().toString();
+        log.info("requestUrl={} method={}",requestUrl,method);
         try {
             for (int i = 0; i < ignoreArray.length; i++) {
                 if (request.getRequestURL().toString().contains(ignoreArray[i])) {
@@ -76,51 +82,44 @@ public class AccessFilter extends ZuulFilter{
 
             String token = getToken(request);
             if(StringUtils.isBlank(token)){
-                ctx.setSendZuulResponse(false);
-                ctx.setResponseStatusCode(Response.SC_OK);
-                ctx.setResponseBody(JSONObject.toJSONString(HgResult.getHgResult(BaseResponseCode.TOKEN_EMPT)));
-                return null;
+                throw new BusinessException(BaseResponseCode.TOKEN_EMPT);
             }
             if(!JwtTokenUtils.validateToken(token)){
-                ctx.setSendZuulResponse(false);
-                ctx.setResponseStatusCode(Response.SC_OK);
-                ctx.setResponseBody(JSONObject.toJSONString(HgResult.getHgResult(BaseResponseCode.TOKEN_PAST_DUE)));
-                return null;
+                throw new BusinessException(BaseResponseCode.TOKEN_PAST_DUE);
             }
-            PathMatcher matcher = new AntPathMatcher();
-            List<String> urls=JwtTokenUtils.getPermission(token);
-            if(null==urls||urls.isEmpty()){
-                ctx.setSendZuulResponse(false);
-                ctx.setResponseStatusCode(Response.SC_OK);
-                ctx.setResponseBody(JSONObject.toJSONString(HgResult.getHgResult(BaseResponseCode.NOT_ACCESS_RESOURCES_PERMISSION)));
-            }
+
             /**
              * 判断有没有权限
              */
-            for (String url:urls){
-                if(null!=url&&matcher.match(url, requestUrl)){
-                    Claims claims = JwtTokenUtils.getClaimsFromToken(token);
-                    // 添加ACCOUNTID进入头信息
-                    ctx.addZuulRequestHeader(UserTokenConstant.LOGIN_JWT_CLAIMS_USERNAME,
-                            String.valueOf(claims.get(UserTokenConstant.LOGIN_JWT_CLAIMS_USERNAME)));
-                    ctx.addZuulRequestHeader(UserTokenConstant.LOGIN_JWT_CLAIMS_USER_ID,
-                            claims.getSubject());
-                    return null;
-                }
-            }
+           if(isPermission(JwtTokenUtils.getUserId(token),requestUrl,method)) {
+               Claims claims = JwtTokenUtils.getClaimsFromToken(token);
+               // 添加ACCOUNTID进入头信息
+               ctx.addZuulRequestHeader(UserTokenConstant.LOGIN_JWT_CLAIMS_USERNAME,
+                       String.valueOf(claims.get(UserTokenConstant.LOGIN_JWT_CLAIMS_USERNAME)));
+               ctx.addZuulRequestHeader(UserTokenConstant.LOGIN_JWT_CLAIMS_USER_ID,
+                       claims.getSubject());
+               return null;
+           }
+            throw new BusinessException(BaseResponseCode.NOT_ACCESS_RESOURCES_PERMISSION);
+
+
+        }catch (BusinessException e){
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(Response.SC_OK);
-            ctx.setResponseBody(JSON.toJSONString(HgResult.getHgResult(BaseResponseCode.NOT_ACCESS_RESOURCES_PERMISSION)));
-
-
-        } catch (Exception e) {
+            ctx.addZuulResponseHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE);
+            HgResult<Object> hgResult = HgResult.getHgResult(e.getMessageCode(), e.getDetailMessage());
+            ctx.setResponseBody(JSON.toJSONString(hgResult));
+            return null;
+        }
+        catch (Exception e) {
             log.info("token error :", e);
             ctx.addZuulResponseHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE);
             ctx.setSendZuulResponse(false);
             ctx.setResponseStatusCode(200);
             ctx.setResponseBody(JSON.toJSONString(HgResult.getHgResult(BaseResponseCode.SERVICECALLEXCEPTION)));
+            return null;
         }
-        return null;
+
     }
 
     /**
@@ -141,4 +140,32 @@ public class AccessFilter extends ZuulFilter{
         }
         return token;
     }
+    /**
+     * 判断是否有权限
+     * @Author:      霍天豪
+     * @CreateDate:  2019/1/28 22:49
+     * @UpdateUser:
+     * @UpdateDate:  2019/1/28 22:49
+     * @Version:     0.0.1
+     * @param userId
+     * @param requestUrl
+     * @param method
+     * @return       boolean
+     * @throws
+     */
+ private boolean isPermission(String userId,String requestUrl,String method){
+     HgResult<List<SysMenu>> menuByUserId = menuFeignService.getMenuByUserId(userId);
+     List<SysMenu>permissions=HgResult.getData(menuByUserId);
+     try {
+         PathMatcher matcher = new AntPathMatcher();
+         for(SysMenu sysMenu:permissions){
+             if(method.equals(sysMenu.getMethod())&&matcher.match(sysMenu.getUrl(),requestUrl)){
+                 return true;
+             }
+         }
+     } catch (Exception e) {
+         return false;
+     }
+     return false;
+ }
 }

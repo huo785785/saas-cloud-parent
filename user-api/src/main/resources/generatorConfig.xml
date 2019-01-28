@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 <generatorConfiguration>
     <!--classPathEntry:数据库的JDBC驱动,换成你自己的驱动位置 可选 -->
-    <classPathEntry location="E:\maven\repo\mysql\mysql-connector-java\5.1.28\mysql-connector-java-5.1.28.jar" />
+    <classPathEntry location="F:\mvnrepository\mysql\mysql-connector-java\5.1.28\mysql-connector-java-5.1.28.jar" />
 
     <!-- 一个数据库一个context -->
     <!--defaultModelType="flat" 大数据字段，不分表 -->
@@ -37,7 +37,7 @@
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
         <!-- 生成mapxml文件 -->
-        <sqlMapGenerator targetPackage="mappers" targetProject="src/main/resources">
+        <sqlMapGenerator targetPackage="mapper" targetProject="src/main/resources">
             <property name="enableSubPackages" value="false"/>
         </sqlMapGenerator>
         <!-- 生成mapxml对应client，也就是接口dao -->

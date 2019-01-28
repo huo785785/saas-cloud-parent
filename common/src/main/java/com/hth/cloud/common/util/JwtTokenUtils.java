@@ -58,25 +58,25 @@ public class JwtTokenUtils implements Serializable {
     }
 
 	/**
-	 * 从token获取权限
+	 * 从token user_id
 	 * @Author:      霍天豪
 	 * @CreateDate:  2019/1/27 18:40
 	 * @UpdateUser:
 	 * @UpdateDate:  2019/1/27 18:40
 	 * @Version:     0.0.1
 	 * @param token
-	 * @return       java.util.List<java.lang.String>
+	 * @return       String
 	 * @throws
 	 */
-	public static List<String>getPermission(String token){
-		List<String> permission=null;
+	public static String getUserId(String token){
+		String userId=null;
 		try {
 			Claims claims = getClaimsFromToken(token);
-			permission = (List<String>) claims.get(AUTHORITIES);
+			userId = claims.getSubject();
 		} catch (Exception e) {
 			log.error("eror={}",e);
 		}
-		return permission;
+		return userId;
 	}
 	/**
 	 * 从令牌中获取数据声明
