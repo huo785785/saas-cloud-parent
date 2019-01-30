@@ -46,4 +46,4 @@ hystrix:
 
 
 filter:
-  ignores: /sys/user/login
+  ignores: /sys/user/login,/v2/api-docs
